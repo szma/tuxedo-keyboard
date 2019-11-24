@@ -77,6 +77,7 @@ MODULE_VERSION("2.0.0");
 #define WMI_SUBMETHOD_ID_SET_KB_LEDS    0x67 /* used to set color, brightness,
 	                                        blinking pattern, etc. */
 
+uint submethod_to_try = 0x0;
 
 // WMI Event Codes
 #define WMI_KEYEVENT_CODE_DECREASE_BACKLIGHT     0x81
