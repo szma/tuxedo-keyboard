@@ -589,6 +589,7 @@ static void tuxedo_wmi_notify(u32 value, void *context)
 	case WMI_KEYEVENT_CODE_TOGGLE_STATE:
 //		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
 		WMI_SUBMETHOD_ID_SET_KB_LEDS++;
+		TUXEDO_ERROR("New submethod id: %x", WMI_SUBMETHOD_ID_SET_KB_LEDS);
 		break;
 
 	default:
