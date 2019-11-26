@@ -587,7 +587,8 @@ static void tuxedo_wmi_notify(u32 value, void *context)
 		break;
 
 	case WMI_KEYEVENT_CODE_TOGGLE_STATE:
-		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
+//		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
+		submethod_to_try++;
 		break;
 
 	default:
