@@ -74,10 +74,10 @@ MODULE_VERSION("2.0.0");
 // Submethod IDs for the CLEVO_GET WMI method
 #define WMI_SUBMETHOD_ID_GET_EVENT      0x01
 #define WMI_SUBMETHOD_ID_GET_AP         0x46
-#define WMI_SUBMETHOD_ID_SET_KB_LEDS    0x67 /* used to set color, brightness,
-	                                        blinking pattern, etc. */
+// #define WMI_SUBMETHOD_ID_SET_KB_LEDS    0x67 /* used to set color, brightness,
+// 	                                        blinking pattern, etc. */
 
-uint submethod_to_try = 0x0;
+uint WMI_SUBMETHOD_ID_SET_KB_LEDS = 0x0;
 
 // WMI Event Codes
 #define WMI_KEYEVENT_CODE_DECREASE_BACKLIGHT     0x81
@@ -588,7 +588,7 @@ static void tuxedo_wmi_notify(u32 value, void *context)
 
 	case WMI_KEYEVENT_CODE_TOGGLE_STATE:
 //		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
-		submethod_to_try++;
+		WMI_SUBMETHOD_ID_SET_KB_LEDS++;
 		break;
 
 	default:
