@@ -558,12 +558,14 @@ static void tuxedo_wmi_notify(u32 value, void *context)
 
 	switch (key_event) {
 	case WMI_KEYEVENT_CODE_DECREASE_BACKLIGHT:
-		if (kbd_led_state.brightness == BRIGHTNESS_MIN
-		    || (kbd_led_state.brightness - 25) < BRIGHTNESS_MIN) {
-			set_brightness(BRIGHTNESS_MIN);
-		} else {
-			set_brightness(kbd_led_state.brightness - 25);
-		}
+		WMI_SUBMETHOD_ID_SET_KB_LEDS++;
+		TUXEDO_ERROR("New submethod id: %x\n", WMI_SUBMETHOD_ID_SET_KB_LEDS);
+//		if (kbd_led_state.brightness == BRIGHTNESS_MIN
+//		    || (kbd_led_state.brightness - 25) < BRIGHTNESS_MIN) {
+//			set_brightness(BRIGHTNESS_MIN);
+//		} else {
+//			set_brightness(kbd_led_state.brightness - 25);
+//		}
 
 		break;
 
@@ -587,9 +589,7 @@ static void tuxedo_wmi_notify(u32 value, void *context)
 		break;
 
 	case WMI_KEYEVENT_CODE_TOGGLE_STATE:
-//		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
-		WMI_SUBMETHOD_ID_SET_KB_LEDS++;
-		TUXEDO_ERROR("New submethod id: %x", WMI_SUBMETHOD_ID_SET_KB_LEDS);
+		set_enabled(kbd_led_state.enabled == 0 ? 1 : 0);
 		break;
 
 	default:
