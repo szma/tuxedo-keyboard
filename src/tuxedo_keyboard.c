@@ -20,13 +20,6 @@
 
 #define pr_fmt(fmt) "tuxedo_keyboard" ": " fmt
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/acpi.h>
-#include <linux/dmi.h>
-#include <linux/platform_device.h>
-#include <linux/input.h>
-#include <linux/input/sparse-keymap.h>
 #include "tuxedo_keyboard_common.h"
 #include "clevo_keyboard.h"
 #include "uniwill_keyboard.h"
@@ -34,7 +27,7 @@
 MODULE_AUTHOR("TUXEDO Computers GmbH <tux@tuxedocomputers.com>");
 MODULE_DESCRIPTION("TUXEDO Computers keyboard & keyboard backlight Driver");
 MODULE_LICENSE("GPL");
-MODULE_VERSION("2.0.5");
+MODULE_VERSION("2.0.6");
 
 MODULE_ALIAS("wmi:" CLEVO_EVENT_GUID);
 MODULE_ALIAS("wmi:" CLEVO_GET_GUID);
@@ -42,6 +35,8 @@ MODULE_ALIAS("wmi:" CLEVO_GET_GUID);
 MODULE_ALIAS("wmi:" UNIWILL_WMI_EVENT_GUID_0);
 MODULE_ALIAS("wmi:" UNIWILL_WMI_EVENT_GUID_1);
 MODULE_ALIAS("wmi:" UNIWILL_WMI_EVENT_GUID_2);
+
+MODULE_SOFTDEP("pre: tuxedo-cc-wmi");
 
 static struct tuxedo_keyboard_driver *driver_list[] = {
 	&clevo_keyboard_driver,
