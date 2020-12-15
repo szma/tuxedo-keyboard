@@ -31,9 +31,10 @@ Provides:       tuxedo_keyboard = %{version}-%{release}
 Obsoletes:      tuxedo_keyboard < %{version}-%{release}
 Obsoletes:      tuxedo-xp-xc-touchpad-key-fix
 Obsoletes:      tuxedo-touchpad-fix <= 1.0.1
+Obsoletes:      tuxedo-cc-wmi
 Requires:       dkms >= 1.95
 BuildRoot:      %{_tmppath}
-Packager:       Tomte <tux@tuxedocomputers.com>
+Packager:       TUXEDO Computers GmbH <tux@tuxedocomputers.com>
 
 %description
 Keyboard & keyboard backlight driver for TUXEDO notebooks
@@ -61,6 +62,8 @@ rm -rf %{buildroot}
 %attr(0644,root,root) /usr/src/%{module}-%{version}/*
 %attr(0755,root,root) /usr/src/%{module}-%{version}/src/
 %attr(0644,root,root) /usr/src/%{module}-%{version}/src/*
+%attr(0755,root,root) /usr/src/%{module}-%{version}/src/tuxedo_io/
+%attr(0644,root,root) /usr/src/%{module}-%{version}/src/tuxedo_io/*
 %attr(0755,root,root) /usr/share/%{module}/
 %attr(0755,root,root) /usr/share/%{module}/postinst
 %attr(0644,root,root) /usr/share/%{module}/tuxedo_keyboard.conf
@@ -71,12 +74,46 @@ for POSTINST in /usr/lib/dkms/common.postinst /usr/share/%{module}/postinst; do
     if [ -f $POSTINST ]; then
         $POSTINST %{module} %{version} /usr/share/%{module}
         RET=$?
-        rmmod %{module} > /dev/null 2>&1 || true
-        modprobe %{module} > /dev/null 2>&1 || true
+
+        # Attempt to (re-)load module immediately, fail silently if not possible at this stage
+
+        # Also stop tccd service if running before
+        echo "Check tccd running status"
+        if systemctl is-active --quiet tccd.service; then
+            TCCD_RUNNING=true
+        else
+            TCCD_RUNNING=false
+        fi
+
+        if $TCCD_RUNNING; then
+            echo "Stop tccd temporarily"
+            systemctl stop tccd 2>&1 || true
+        fi
+
+        % Explicitly unload old tuxedo_cc_wmi if loaded at this point
+        rmmod tuxedo_cc_wmi > /dev/null 2>&1 || true
+
+        echo "(Re)load modules if possible"
+
+        rmmod tuxedo_io > /dev/null 2>&1 || true
+        rmmod clevo_wmi > /dev/null 2>&1 || true
+        rmmod clevo_acpi > /dev/null 2>&1 || true
+        rmmod tuxedo_keyboard > /dev/null 2>&1 || true
+        
+        modprobe tuxedo_keyboard > /dev/null 2>&1 || true
+        modprobe clevo_wmi > /dev/null 2>&1 || true
+        modprobe clevo_acpi > /dev/null 2>&1 || true
+        modprobe tuxedo_io > /dev/null 2>&1 || true
 
         # Install default config if none exist already
         if [ ! -f "/etc/modprobe.d/tuxedo_keyboard.conf" ]; then
             cp -f /usr/share/tuxedo-keyboard/tuxedo_keyboard.conf /etc/modprobe.d/tuxedo_keyboard.conf
+        fi
+
+        # Restart tccd after reload if it was running
+        if $TCCD_RUNNING; then
+            echo "Start tccd again"
+            systemctl start tccd 2>&1 || true
         fi
 
         exit $RET
@@ -103,6 +140,11 @@ exit 0
 
 
 %changelog
+* Wed Dec 9 2020 C Sandberg <tux@tuxedocomputers.com> 3.0.0-1
+- Changed structure of clevo interfaces
+- Added separate clevo-wmi module with existing functionality
+- Added clevo-acpi module with implementation of the "new" clevo ACPI interface
+- Added tuxedo-io module (former tuxedo-cc-wmi) into package
 * Fri Nov 13 2020 C Sandberg <tux@tuxedocomputers.com> 2.1.0-1
 - Added device support (XMG Fusion)
 - Added uniwill lightbar driver (with led_classdev interface)
