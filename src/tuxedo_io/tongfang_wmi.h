@@ -125,7 +125,7 @@ static u32 uw_ec_read_addr_wmi(u8 addr_low, u8 addr_high, union uw_ec_read_retur
     u32 uw_data[10];
     u32 ret = uw_wmi_ec_evaluate(addr_low, addr_high, 0x00, 0x00, 1, uw_data);
     output->dword = uw_data[0];
-    pr_debug("addr: 0x%02x%02x value: %0#4x (high: %0#4x) result: %d\n", addr_high, addr_low, output->bytes.data_low, output->bytes.data_high, ret);
+    // pr_debug("addr: 0x%02x%02x value: %0#4x (high: %0#4x) result: %d\n", addr_high, addr_low, output->bytes.data_low, output->bytes.data_high, ret);
     return ret;
 }
 
@@ -181,7 +181,7 @@ static u32 uw_ec_read_addr_direct(u8 addr_low, u8 addr_high, union uw_ec_read_re
 
     mutex_unlock(&uniwill_ec_lock);
 
-    pr_debug("addr: 0x%02x%02x value: %0#4x result: %d\n", addr_high, addr_low, output->bytes.data_low, result);
+    // pr_debug("addr: 0x%02x%02x value: %0#4x result: %d\n", addr_high, addr_low, output->bytes.data_low, result);
 
     return result;
 }
@@ -288,4 +288,41 @@ static void uniwill_exit(void)
 
     // Disable manual mode
     uw_ec_write_addr(0x41, 0x07, 0x00, 0x00, &reg_write_return);
+}
+
+static u32 uw_set_fan(u32 fan_index, u8 fan_speed)
+{
+	u8 reg_low, reg_high = 0x18;
+	u32 i;
+	union uw_ec_read_return reg_read_return;
+	union uw_ec_write_return reg_write_return;
+	u8 low_reg_fan0 = 0x04;
+	u8 low_reg_fan1 = 0x09;
+
+	if (fan_index == 0)
+		reg_low = low_reg_fan0;
+	else if (fan_index == 1)
+		reg_low = low_reg_fan1;
+	else
+		return -EINVAL;
+
+	// Check current mode
+	uw_ec_read_addr(0x51, 0x07, &reg_read_return);
+	if (reg_read_return.bytes.data_low != 0x40) {
+		// If not "full fan mode" (ie. 0x40) switch to it (required for fancontrol)
+		uw_ec_write_addr(0x51, 0x07, 0x40, 0x00, &reg_write_return);
+		// Attempt to write both fans as quick as possible before complete ramp-up
+		pr_debug("prevent ramp-up start\n");
+		for (i = 0; i < 10; ++i) {
+			uw_ec_write_addr(low_reg_fan0, reg_high, fan_speed & 0xff, 0x00, &reg_write_return);
+			uw_ec_write_addr(low_reg_fan1, reg_high, fan_speed & 0xff, 0x00, &reg_write_return);
+			msleep(10);
+		}
+		pr_debug("prevent ramp-up done\n");
+	} else {
+		// Otherwise just set the chosen fan
+		uw_ec_write_addr(reg_low, reg_high, fan_speed & 0xff, 0x00, &reg_write_return);
+	}
+
+	return 0;
 }
