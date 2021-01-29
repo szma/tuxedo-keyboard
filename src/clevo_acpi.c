@@ -120,11 +120,11 @@ static int clevo_acpi_add(struct acpi_device *device)
 
 	pr_debug("clevo_acpi driver add\n");
 
-	// Initiate clevo keyboard, if not already loaded by other interface driver
-	clevo_keyboard_init();
-
 	// Add this interface
 	clevo_keyboard_add_interface(&clevo_acpi_interface);
+
+	// Initiate clevo keyboard, if not already loaded by other interface driver
+	clevo_keyboard_init();
 
 	pr_info("interface initialized\n");
 
@@ -195,7 +195,7 @@ module_acpi_driver(clevo_acpi_driver);
 
 MODULE_AUTHOR("TUXEDO Computers GmbH <tux@tuxedocomputers.com>");
 MODULE_DESCRIPTION("Driver for Clevo ACPI interface");
-MODULE_VERSION("0.0.1");
+MODULE_VERSION("0.0.2");
 MODULE_LICENSE("GPL");
 
 MODULE_DEVICE_TABLE(acpi, clevo_acpi_device_ids);
