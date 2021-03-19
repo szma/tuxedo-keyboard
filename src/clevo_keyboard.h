@@ -64,8 +64,12 @@ struct clevo_interface_t *active_clevo_interface;
 void clevo_keyboard_write_state(void);
 void clevo_keyboard_event_callb(u32 event);
 
+static DEFINE_MUTEX(clevo_keyboard_interface_modification_lock);
+
 u32 clevo_keyboard_add_interface(struct clevo_interface_t *new_interface)
 {
+	mutex_lock(&clevo_keyboard_interface_modification_lock);
+
 	if (strcmp(new_interface->string_id, "clevo_wmi") == 0) {
 		clevo_interfaces.wmi = new_interface;
 		clevo_interfaces.wmi->event_callb = clevo_keyboard_event_callb;
@@ -88,10 +92,13 @@ u32 clevo_keyboard_add_interface(struct clevo_interface_t *new_interface)
 	} else {
 		// Not recognized interface
 		pr_err("unrecognized interface\n");
+		mutex_unlock(&clevo_keyboard_interface_modification_lock);
 		return -EINVAL;
 	}
 
 	clevo_keyboard_write_state();
+
+	mutex_unlock(&clevo_keyboard_interface_modification_lock);
 
 	return 0;
 }
@@ -99,16 +106,21 @@ EXPORT_SYMBOL(clevo_keyboard_add_interface);
 
 u32 clevo_keyboard_remove_interface(struct clevo_interface_t *interface)
 {
+	mutex_lock(&clevo_keyboard_interface_modification_lock);
+
 	if (strcmp(interface->string_id, "clevo_wmi") == 0) {
 		clevo_interfaces.wmi = NULL;
 	} else if (strcmp(interface->string_id, "clevo_acpi") == 0) {
 		clevo_interfaces.acpi = NULL;
 	} else {
+		mutex_unlock(&clevo_keyboard_interface_modification_lock);
 		return -EINVAL;
 	}
 
 	if (active_clevo_interface == interface)
 		active_clevo_interface = NULL;
+
+	mutex_unlock(&clevo_keyboard_interface_modification_lock);
 
 	return 0;
 }
@@ -770,6 +782,19 @@ struct tuxedo_keyboard_driver clevo_keyboard_driver_v2 = {
 	.key_map = clevo_keymap,
 };
 
+/**
+ * strstr version of dmi_match
+ */
+static bool dmi_string_in(enum dmi_field f, const char *str)
+{
+	const char *info = dmi_get_system_info(f);
+
+	if (info == NULL || str == NULL)
+		return info == str;
+
+	return strstr(info, str) != NULL;
+}
+
 int clevo_keyboard_init(void)
 {
 	bool performance_profile_set_workaround;
@@ -778,10 +803,12 @@ int clevo_keyboard_init(void)
 
 	// Workaround for firmware issue not setting selected performance profile.
 	// Explicitly set "performance" perf. profile on init regardless of what is chosen
-	// for these devices (Aura, XP14)
+	// for these devices (Aura, XP14, IBS14v5)
 	performance_profile_set_workaround = false
-		|| dmi_match(DMI_BOARD_NAME, "AURA1501")
-		|| dmi_match(DMI_BOARD_NAME, "NV4XMB,ME,MZ")
+		|| dmi_string_in(DMI_BOARD_NAME, "AURA1501")
+		|| dmi_string_in(DMI_BOARD_NAME, "NL5xRU")
+		|| dmi_string_in(DMI_BOARD_NAME, "NV4XMB,ME,MZ")
+		|| dmi_string_in(DMI_BOARD_NAME, "L140CU")
 		;
 	if (performance_profile_set_workaround) {
 		TUXEDO_INFO("Performance profile 'performance' set workaround applied\n");
