@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2019-2020 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
+ * Copyright (c) 2019-2021 TUXEDO Computers GmbH <tux@tuxedocomputers.com>
  *
  * This file is part of tuxedo-io.
  *
@@ -32,7 +32,7 @@
 
 MODULE_DESCRIPTION("Hardware interface for TUXEDO laptops");
 MODULE_AUTHOR("TUXEDO Computers GmbH <tux@tuxedocomputers.com>");
-MODULE_VERSION("0.2.2");
+MODULE_VERSION("0.2.3");
 MODULE_LICENSE("GPL");
 
 MODULE_ALIAS_CLEVO_INTERFACES();
@@ -65,6 +65,8 @@ static long clevo_ioctl_interface(struct file *file, unsigned int cmd, unsigned 
 	u32 result = 0, status;
 	u32 copy_result;
 	u32 argument = (u32) arg;
+
+	u32 clevo_arg;
 
 	const char str_no_if[] = "";
 	char *str_clevo_if;
@@ -138,6 +140,11 @@ static long clevo_ioctl_interface(struct file *file, unsigned int cmd, unsigned 
 		case W_CL_TOUCHPAD_SW:
 			copy_result = copy_from_user(&argument, (int32_t *) arg, sizeof(argument));
 			clevo_evaluate_method(CLEVO_CMD_SET_TOUCHPAD_SW, argument, &result);
+			break;
+		case W_CL_PERF_PROFILE:
+			copy_result = copy_from_user(&argument, (int32_t *) arg, sizeof(argument));
+			clevo_arg = (CLEVO_OPT_SUBCMD_SET_PERF_PROF << 0x18) | (argument & 0xff);
+			clevo_evaluate_method(CLEVO_CMD_OPT, clevo_arg, &result);
 			break;
 	}
 
