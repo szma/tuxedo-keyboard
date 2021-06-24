@@ -25,6 +25,7 @@
 #include <linux/delay.h>
 #include <linux/leds.h>
 #include <linux/string.h>
+#include <linux/version.h>
 #include "uw_io.h"
 
 #define UNIWILL_WMI_MGMT_GUID_BA "ABBC0F6D-8EA1-11D1-00A0-C90629100000"
@@ -463,6 +464,12 @@ static int uw_kbd_bl_init(struct platform_device *dev)
 		| dmi_match(DMI_BOARD_NAME, "POLARIS1701A2060")
 		| dmi_match(DMI_BOARD_NAME, "POLARIS1701I1650TI")
 		| dmi_match(DMI_BOARD_NAME, "POLARIS1701I2060")
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+		| dmi_match(DMI_PRODUCT_SKU, "POLARIS1XA02")
+		| dmi_match(DMI_PRODUCT_SKU, "POLARIS1XI02")
+		| dmi_match(DMI_PRODUCT_SKU, "POLARIS1XA03")
+		| dmi_match(DMI_PRODUCT_SKU, "POLARIS1XI03")
+#endif
 
 		// Old names
 		// | dmi_match(DMI_BOARD_NAME, "Polaris15I01")
@@ -471,6 +478,11 @@ static int uw_kbd_bl_init(struct platform_device *dev)
 		// | dmi_match(DMI_BOARD_NAME, "Polaris1501I2060")
 		// | dmi_match(DMI_BOARD_NAME, "Polaris1701I2060")
 		;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+	TUXEDO_ERROR(
+		"Warning: Kernel version less that 4.18, keyboard backlight might not be properly recognized.");
+#endif
 
 	// Save previous enable state
 	uniwill_kbd_bl_enable_state_on_start = uniwill_read_kbd_bl_enabled();
@@ -701,7 +713,19 @@ static int uw_lightbar_init(struct platform_device *dev)
 		|| dmi_match(DMI_BOARD_NAME, "LAPQC71B")
 		|| dmi_match(DMI_BOARD_NAME, "TRINITY1501I")
 		|| dmi_match(DMI_BOARD_NAME, "TRINITY1701I")
+		|| dmi_match(DMI_PRODUCT_NAME, "A60 MUV")
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
+		|| dmi_match(DMI_PRODUCT_SKU, "STELLARIS1XI03")
+                || dmi_match(DMI_PRODUCT_SKU, "STELLARIS1XA03")
+
+#endif
 		;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+	TUXEDO_ERROR(
+		"Warning: Kernel version less that 4.18, lightbar might not be properly recognized.");
+#endif
+
 	if (!lightbar_supported)
 		return -ENODEV;
 
