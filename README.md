@@ -1,10 +1,16 @@
 # Table of Content
+- <a href="#purpose">Purpose of this fork</a>
 - <a href="#description">Description</a>
 - <a href="#building">Building and Install</a>
 - <a href="#using">Using</a>
 - <a href="#sysfs">Sysfs</a>
 - <a href="#kernelparam">Kernel Parameter</a>
 - <a href="#modes">Modes</a>
+
+# Purpose of this fork <a name="purpose"></a>
+
+Add support for XMG CORE 15 (AMD E21) aka GMxNGxx.
+The names of tuxedo devices are hardcoded within the driver. I added a board name and try to keep up to date with new versions.
 
 # Description <a name="description"></a>
 TUXEDO Computers kernel module drivers for keyboard, keyboard backlight & general hardware I/O
