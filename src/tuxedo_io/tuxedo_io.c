@@ -34,7 +34,7 @@
 
 MODULE_DESCRIPTION("Hardware interface for TUXEDO laptops");
 MODULE_AUTHOR("TUXEDO Computers GmbH <tux@tuxedocomputers.com>");
-MODULE_VERSION("0.3.0");
+MODULE_VERSION("0.3.1");
 MODULE_LICENSE("GPL");
 
 MODULE_ALIAS_CLEVO_INTERFACES();
@@ -360,6 +360,16 @@ static u32 uw_set_fan(u32 fan_index, u8 fan_speed)
 		else
 			return -EINVAL;
 
+		if (fan_speed == 0) {
+			// Avoid hard coded EC behaviour: Setting fan speed = 0x00 spins the fan up
+			// to 0x3c (30%) for 3 minutes before going to 0x00. Setting fan speed = 1
+			// also causes the fan to stop since on 2020 or later TF devices the
+			// microcontroller in the fan itself is intelligent enough to not try to
+			// start up the motor when the speed is to slow. Older devices don't use
+			// this fan controll anyway, but the else case below.
+			fan_speed = 1;
+		}
+
 		uniwill_write_ec_ram(addr_for_fan, fan_speed & 0xff);
 	}
 	else { // old workaround using full fan mode
@@ -397,6 +407,21 @@ static u32 uw_set_fan_auto(void)
 	u8 mode_data;
 
 	if (has_universal_ec_fan_control() == 1) {
+		u16 addr_use_custom_fan_table_0 = 0x07c5; // use different tables for both fans (0x0f00-0x0f2f and 0x0f30-0x0f5f respectivly)
+		u16 addr_use_custom_fan_table_1 = 0x07c6; // enable 0x0fxx fantables
+		u8 offset_use_custom_fan_table_0 = 7;
+		u8 offset_use_custom_fan_table_1 = 2;
+		u8 value_use_custom_fan_table_0;
+		u8 value_use_custom_fan_table_1;
+		uniwill_read_ec_ram(addr_use_custom_fan_table_1, &value_use_custom_fan_table_1);
+		if ((value_use_custom_fan_table_1 >> offset_use_custom_fan_table_1) & 1) {
+			uniwill_write_ec_ram_with_retry(addr_use_custom_fan_table_1, value_use_custom_fan_table_1 - (1 << offset_use_custom_fan_table_1), 3);
+		}
+		uniwill_read_ec_ram(addr_use_custom_fan_table_0, &value_use_custom_fan_table_0);
+		if ((value_use_custom_fan_table_0 >> offset_use_custom_fan_table_0) & 1) {
+			uniwill_write_ec_ram_with_retry(addr_use_custom_fan_table_0, value_use_custom_fan_table_0 - (1 << offset_use_custom_fan_table_0), 3);
+		}
+		fans_initialized = false;
 	}
 	else {
 		// Get current mode
@@ -576,23 +601,25 @@ static long uniwill_ioctl_interface(struct file *file, unsigned int cmd, unsigne
 			copy_result = copy_to_user((void *) arg, &result, sizeof(result));
 			break;
 		case R_UW_FANS_OFF_AVAILABLE:
-			result = has_universal_ec_fan_control();
+			/*result = has_universal_ec_fan_control();
 			if (result == 1) {
 				result = 0;
 			}
 			else if (result == 0) {
 				result = 1;
-			}
+			}*/
+			result = 1;
 			copy_result = copy_to_user((void *) arg, &result, sizeof(result));
 			break;
 		case R_UW_FANS_MIN_SPEED:
-			result = has_universal_ec_fan_control();
+			/*result = has_universal_ec_fan_control();
 			if (result == 1) {
 				result = 20;
 			}
 			else if (result == 0) {
 				result = 0;
-			}
+			}*/
+			result = 20;
 			copy_result = copy_to_user((void *) arg, &result, sizeof(result));
 			break;
 		case R_UW_TDP0:
